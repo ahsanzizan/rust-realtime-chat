@@ -23,10 +23,12 @@ A simple real-time chat application using TCP sockets in Rust, supporting multip
 
 ## Running the Application
 
-### Start the Server
+To start the app, you can download the ZIP of released version [here](https://github.com/ahsanzizan/rust-realtime-chat/releases/download/v1.0.0/chat-app-release.rar). Then extract it to get a folder that contains `server.exe` and `client.exe`
+
+### Start the Server First
 
 ```bash
-cargo run --bin server
+./chat-app-release/server.exe
 ```
 
 ### Start Clients
@@ -34,7 +36,7 @@ cargo run --bin server
 In separate terminal windows, run:
 
 ```bash
-cargo run --bin client
+./chat-app-release/client.exe
 ```
 
 ## Usage
