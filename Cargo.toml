@@ -3,6 +3,7 @@ name = "rust-realtime-chat"
 version = "0.1.0"
 edition = "2021"
 
+# Multi-binary
 [[bin]]
 name = "server"
 path = "src/server.rs"
