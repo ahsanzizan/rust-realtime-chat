@@ -4,7 +4,11 @@ use std::sync::mpsc::{self, TryRecvError};
 use std::thread;
 use std::time::Duration;
 
-fn main() {
+use colored::Colorize;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    println!("{}", "🌐 Connecting to Chat Server...".green().bold());
+
     let addr: &str = "127.0.0.1";
     let port: i32 = 6000;
 
@@ -16,19 +20,28 @@ fn main() {
 
     let (tx, rx) = mpsc::channel::<String>();
 
-    thread::spawn(move || loop {
-        let mut buff: String = String::new();
-        io::stdin()
-            .read_line(&mut buff)
-            .expect("Failed to read from stdin");
-        let msg = buff.trim().to_string();
-        if msg == ":quit" || tx.send(msg).is_err() {
-            break;
+    thread::spawn(move || {
+        println!("{}", "💬 Enter your messages (type ':quit' to exit)".cyan());
+
+        loop {
+            let mut buff: String = String::new();
+            io::stdin()
+                .read_line(&mut buff)
+                .expect("Failed to read from stdin");
+
+            let msg: String = buff.trim().to_string();
+            if msg == ":quit" {
+                println!("{}", "👋 Exiting chat...".yellow());
+                break;
+            }
+
+            if tx.send(msg).is_err() {
+                break;
+            }
         }
     });
 
-    println!("Connected to server!");
-    println!("Type your message (or ':quit' to exit)");
+    println!("{}", "✅ Connected to server!".green());
 
     loop {
         let mut buff: Vec<u8> = vec![0; 1024];
@@ -36,14 +49,15 @@ fn main() {
         match client.read(&mut buff) {
             Ok(n) => {
                 if n == 0 {
-                    println!("Server has closed the connection.");
+                    println!("{}", "🔌 Server closed the connection".red());
                     break;
                 }
-                println!("{}", String::from_utf8_lossy(&buff[..n]));
+
+                print!("{}", String::from_utf8_lossy(&buff[..n]).green());
             }
             Err(ref err) if err.kind() == ErrorKind::WouldBlock => (),
             Err(_) => {
-                println!("Connection with server was severed.");
+                println!("{}", "❌ Connection with server was severed".red());
                 break;
             }
         }
@@ -52,7 +66,11 @@ fn main() {
             Ok(msg) => {
                 let mut buff: Vec<u8> = msg.clone().into_bytes();
                 buff.push(b'\n');
-                client.write_all(&buff).expect("Writing to socket failed");
+
+                if let Err(e) = client.write_all(&buff) {
+                    eprintln!("{} {}", "❌ Failed to send your message:".red(), e);
+                    break;
+                }
             }
             Err(TryRecvError::Empty) => (),
             Err(TryRecvError::Disconnected) => break,
@@ -60,4 +78,6 @@ fn main() {
 
         thread::sleep(Duration::from_millis(100));
     }
+
+    Ok(())
 }
