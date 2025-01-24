@@ -4,16 +4,22 @@
 
 A simple real-time chat application using TCP sockets in Rust, supporting multiple concurrent clients.
 
+---
+
 ## Prerequisites
 
 - Rust (latest stable version)
 - Cargo package manager
+
+---
 
 ## Project Structure
 
 - `src/server.rs`: TCP server implementation
 - `src/client.rs`: TCP client implementation
 - `Cargo.toml`: Project configuration
+
+---
 
 ## Running the Application
 
@@ -37,6 +43,8 @@ cargo run --bin client
 - Messages are broadcast to all connected clients
 - Type `:quit` to exit the client
 
+---
+
 ## Features
 
 - Concurrent client handling
@@ -44,16 +52,26 @@ cargo run --bin client
 - Simple broadcast messaging
 - Error handling
 
+---
+
+## Topology
+
+![Topology Diagram](./docs/Topology.png)
+
 ## Network Details
 
 - Localhost: 127.0.0.1
 - Port: 6000
+
+---
 
 ## Limitations
 
 - No persistent message storage
 - Basic error handling
 - No authentication
+
+---
 
 ## License
 
