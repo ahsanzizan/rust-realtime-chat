@@ -1,17 +1,31 @@
 use std::io::{ErrorKind, Read, Write};
 use std::net::{TcpListener, TcpStream};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Sender};
+use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
 use colored::Colorize;
 
-fn main() {
-    println!("{}", "🚀 Starting The Server...".green().bold());
-
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let addr: &str = "127.0.0.1";
     let port: i32 = 6000;
 
+    // Track server running status
+    let running: Arc<AtomicBool> = Arc::new(AtomicBool::new(true));
+    let r: Arc<AtomicBool> = running.clone();
+
+    // Set SIGINT exit handler
+    ctrlc::set_handler(move || {
+        r.store(false, Ordering::SeqCst);
+        println!("\n{}", "🛑 Shutting down server...".yellow());
+    })
+    .expect("Error setting CTRL+C handler");
+
+    println!("{}", "🚀 Starting The Server...".green().bold());
+
+    // Setup TCP Listener server
     let server: TcpListener =
         TcpListener::bind(format!("{}:{}", addr, port)).expect("Failed to bind server to ADDR");
     server
@@ -23,7 +37,7 @@ fn main() {
     let mut clients: Vec<TcpStream> = vec![];
     let (tx, rx) = mpsc::channel::<String>();
 
-    loop {
+    while running.load(Ordering::SeqCst) {
         if let Ok((mut socket, addr)) = server.accept() {
             println!(
                 "{} {}",
@@ -74,4 +88,7 @@ fn main() {
                 .collect::<Vec<_>>();
         }
     }
+
+    println!("{}", "👋 Server shutdown complete.".green());
+    Ok(())
 }
