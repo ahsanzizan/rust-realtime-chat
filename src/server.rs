@@ -4,7 +4,11 @@ use std::sync::mpsc::{self, Sender};
 use std::thread;
 use std::time::Duration;
 
+use colored::Colorize;
+
 fn main() {
+    println!("{}", "🚀 Starting The Server...".green().bold());
+
     let addr: &str = "127.0.0.1";
     let port: i32 = 6000;
 
@@ -14,12 +18,18 @@ fn main() {
         .set_nonblocking(true)
         .expect("Failed to set the non-blocking property!");
 
+    println!("{}", "📡 Listening on 127.0.0.1:6000".cyan().italic());
+
     let mut clients: Vec<TcpStream> = vec![];
     let (tx, rx) = mpsc::channel::<String>();
 
     loop {
         if let Ok((mut socket, addr)) = server.accept() {
-            println!("Client {} connected", addr);
+            println!(
+                "{} {}",
+                "✅ New Client connected:".green(),
+                addr.to_string().yellow()
+            );
 
             let tx: Sender<String> = tx.clone();
             clients.push(socket.try_clone().expect("Failed to clone client"));
@@ -29,15 +39,18 @@ fn main() {
 
                 loop {
                     match socket.read(&mut buffer) {
-                        Ok(n) if n == 0 => return,
+                        Ok(n) if n == 0 => {
+                            println!("{} {}", "🔌 Client has disconnected:".red(), addr);
+                            return;
+                        }
                         Ok(n) => {
                             let msg = String::from_utf8_lossy(&buffer[..n]);
                             tx.send(format!("Client {}: {}", addr, msg))
                                 .expect("Failed to send message to channel");
                         }
                         Err(ref err) if err.kind() == ErrorKind::WouldBlock => (),
-                        Err(_) => {
-                            println!("Closing connection with {}", addr);
+                        Err(e) => {
+                            eprintln!("{} {}", "❌ Connection error:".red(), e);
                             return;
                         }
                     }
@@ -48,10 +61,12 @@ fn main() {
         }
 
         if let Ok(msg) = rx.try_recv() {
+            let broadcast_msg = format!("{} {}", "📢 Broadcast:".yellow(), msg);
+
             clients = clients
                 .into_iter()
                 .filter_map(|mut client| {
-                    let mut buff = msg.clone().into_bytes();
+                    let mut buff: Vec<u8> = broadcast_msg.clone().into_bytes();
                     buff.push(b'\n');
 
                     return client.write_all(&buff).map(|_| client).ok();
